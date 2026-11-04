@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2c6fb7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kindness Jar">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Kindness Jar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: one-column phone app. Kid switcher, then tabs; the jar card summarises, button grids act. */
+:root{
+  --bg:#eef3f8; --surface:#ffffff; --ink:#1d2a3a; --muted:#5d6b7c; --line:#d6dfe9;
+  --good:#2f9e6b; --good-soft:#dcf3e8; --oops:#d9534f; --oops-soft:#fbe4e2;
+  --gold:#f2b632; --gold-soft:#fdf0cf; --accent:#2c6fb7; --accent-soft:#dde9f7;
+  --display:"Fredoka","Nunito",system-ui,sans-serif; --body:"Nunito",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121a24; --surface:#1b2633; --ink:#e8eef5; --muted:#9fb0c3; --line:#2c3a4b;
+  --good:#4cc48d; --good-soft:#17352a; --oops:#f07a73; --oops-soft:#3b1f22;
+  --gold:#f5c451; --gold-soft:#3a3018; --accent:#6fa8e8; --accent-soft:#1d3047; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121a24; --surface:#1b2633; --ink:#e8eef5; --muted:#9fb0c3; --line:#2c3a4b;
+  --good:#4cc48d; --good-soft:#17352a; --oops:#f07a73; --oops-soft:#3b1f22;
+  --gold:#f5c451; --gold-soft:#3a3018; --accent:#6fa8e8; --accent-soft:#1d3047; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:1.6rem} h2{font-size:1.15rem} h3{font-size:1rem}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:10px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lock{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:.85rem}
+.lock.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.kids{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.kid{flex:0 0 auto;padding:8px 16px;border-radius:999px;background:var(--surface);border:2px solid var(--line);font-weight:800}
+.kid[aria-pressed="true"]{border-color:var(--kc);background:var(--kc);color:#fff}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.tab{padding:8px 4px;border-radius:10px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.jar{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:center}
+.jarvis{position:relative;width:96px;height:120px;border:3px solid var(--ink);border-top-width:0;border-radius:14px 14px 28px 28px;overflow:hidden;background:var(--bg)}
+.jarvis::before{content:"";position:absolute;top:0;left:-6px;right:-6px;height:10px;background:var(--ink);border-radius:4px}
+.fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(var(--gold),#e89a1c);transition:height .6s ease}
+.pts{font-family:var(--display);font-size:2.6rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.pts small{font-size:1rem;color:var(--muted);font-weight:600}
+.goal{font-size:.92rem;color:var(--muted)}
+.goal b{color:var(--ink)}
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);transition:width .6s ease}
+.strikes{display:flex;align-items:center;gap:6px;font-size:.88rem;color:var(--muted);flex-wrap:wrap}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--oops)}
+.dot.f{background:var(--oops)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.deed{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px;border-radius:14px;min-height:84px;font-weight:700;line-height:1.25}
+.deed .ic{font-size:1.4rem}
+.deed .p{font-size:.8rem;font-weight:800;margin-top:auto}
+.deed.g{background:var(--good-soft)} .deed.g .p{color:var(--good)}
+.deed.b{background:var(--oops-soft)} .deed.b .p{color:var(--oops)}
+.deed:active{transform:scale(.97)}
+.deed:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{padding:10px 14px;border-radius:12px;font-weight:800;background:var(--accent);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.good{background:var(--good)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:.88rem;color:var(--muted);margin:0}
+.rw{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.rw:first-of-type{border-top:0}
+.rw .nm{font-weight:700;min-width:0}
+.cost{font-variant-numeric:tabular-nums;font-weight:800;color:#8a5c00;background:var(--gold-soft);padding:2px 8px;border-radius:999px;font-size:.82rem}
+:root[data-theme="dark"] .cost{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cost{color:var(--gold)}}
+.log{display:flex;flex-direction:column}
+.le{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.93rem}
+.le:first-child{border-top:0}
+.le .t{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.d{font-weight:800;font-variant-numeric:tabular-nums}
+.d.up{color:var(--good)} .d.dn{color:var(--oops)} .d.z{color:var(--muted)}
+.ed{display:grid;grid-template-columns:2.2rem 1fr 4.2rem auto;gap:6px;align-items:center}
+.ed.n{grid-template-columns:1fr auto}
+.ed.r{grid-template-columns:auto 1fr 4.2rem auto}
+.ed input[type=text],.ed input[type=number],.f input{width:100%;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.ed input.e{text-align:center;padding:8px 2px}
+.x{width:34px;height:34px;border-radius:10px;color:var(--muted);font-size:1.1rem}
+.x:hover{background:var(--oops-soft);color:var(--oops)}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 12px 10px 16px;border-radius:14px;display:flex;align-items:center;gap:12px;font-weight:700;max-width:calc(100% - 32px);z-index:20;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast button{color:var(--gold);font-weight:800;padding:4px 6px}
+.status{font-size:.82rem;color:var(--muted);text-align:center}
+.pin{display:flex;gap:8px;align-items:center}
+.pin input{width:7rem;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);letter-spacing:.3em;text-align:center}
+.burst{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.fill,.bar i{transition:none}.burst{animation:none}}
+@media (max-width:380px){.jar{grid-template-columns:72px 1fr}.jarvis{width:72px;height:94px}.pts{font-size:2.1rem}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="top">
+    <h1>Kindness Jar</h1>
+    <button class="lock" id="lockBtn" type="button"></button>
+  </div>
+  <div id="pinBox" class="card" hidden>
+    <h3>Parent PIN</h3>
+    <div class="pin"><input id="pinIn" type="password" inputmode="numeric" maxlength="6" aria-label="Parent PIN"><button class="btn" id="pinGo" type="button">Unlock</button><button class="btn ghost" id="pinCancel" type="button">Cancel</button></div>
+    <p class="hint" id="pinMsg"></p>
+  </div>
+  <div class="kids" id="kids" role="group" aria-label="Choose child"></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-v="today" type="button">Today</button>
+    <button class="tab" role="tab" data-v="rewards" type="button">Rewards</button>
+    <button class="tab" role="tab" data-v="history" type="button">History</button>
+    <button class="tab" role="tab" data-v="setup" type="button">Setup</button>
+  </div>
+  <main id="main" class="wrap"></main>
+  <p class="status" id="status">Loading your family's jar…</p>
+</div>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="undoBtn" type="button">Undo</button></div>
+
+<script>
+const COLORS=["#2c6fb7","#c2457a","#2f9e6b","#d9822b","#7a55c9","#1f8f99"];
+const DEFAULTS={
+  kids:[{id:"k1",name:"Sample kid",color:"#2c6fb7",points:0,strikes:0,goal:null}],
+  deeds:[
+    {id:"d1",icon:"🤝",label:"Helped a brother or sister",pts:3},
+    {id:"d2",icon:"🧸",label:"Shared without being asked",pts:3},
+    {id:"d3",icon:"🙏",label:"Said please and thank you",pts:1},
+    {id:"d4",icon:"🧹",label:"Cleaned up toys",pts:2},
+    {id:"d5",icon:"🛏️",label:"Made the bed",pts:1},
+    {id:"d6",icon:"🍽️",label:"Helped with a chore",pts:3},
+    {id:"d7",icon:"📚",label:"Homework with no reminders",pts:3},
+    {id:"d8",icon:"💬",label:"Kind words to someone",pts:2},
+    {id:"d9",icon:"⭐",label:"Told the truth when it was hard",pts:5},
+    {id:"d10",icon:"🌬️",label:"Calmed down on their own",pts:3},
+    {id:"d11",icon:"📖",label:"Read for 20 minutes",pts:2},
+    {id:"d12",icon:"🌻",label:"Helped someone outside the family",pts:5}],
+  oops:[
+    {id:"o1",icon:"✋",label:"Hitting or pushing"},
+    {id:"o2",icon:"😠",label:"Mean words or name-calling"},
+    {id:"o3",icon:"🙉",label:"Didn't listen after 2 reminders"},
+    {id:"o4",icon:"🤥",label:"Lying"},
+    {id:"o5",icon:"📢",label:"Tantrum or yelling"},
+    {id:"o6",icon:"🫳",label:"Took something without asking"},
+    {id:"o7",icon:"📱",label:"Went over screen-time limit"},
+    {id:"o8",icon:"🚫",label:"Refused to share"}],
+  rewards:[
+    {id:"r1",label:"Pick tonight's dessert",cost:15,on:true},
+    {id:"r2",label:"Extra bedtime story",cost:15,on:true},
+    {id:"r3",label:"20 extra minutes of screen time",cost:20,on:true},
+    {id:"r4",label:"Skip one chore",cost:25,on:false},
+    {id:"r5",label:"Stay up 30 minutes later",cost:25,on:true},
+    {id:"r6",label:"Choose the family movie",cost:30,on:true},
+    {id:"r7",label:"Small toy or new book",cost:40,on:true},
+    {id:"r8",label:"One-on-one time with a parent",cost:50,on:true},
+    {id:"r9",label:"Pick what's for dinner",cost:50,on:false},
+    {id:"r10",label:"Playdate or sleepover with a friend",cost:75,on:true},
+    {id:"r11",label:"Family outing (zoo, park, museum)",cost:100,on:true},
+    {id:"r12",label:"Bigger toy or game",cost:150,on:false}],
+  rules:{strikes:3,penalty:5,repair:true,pin:""},
+  log:[], rev:0
+};
+let S=null, view="today", kidId=null, unlocked=false, lastUndo=null, toastT=null;
+let db=null, ref=null, writing=false, pending=false, myRev=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid=p=>p+Math.random().toString(36).slice(2,8);
+const kid=()=>S.kids.find(k=>k.id===kidId)||S.kids[0];
+const canAct=()=>!S.rules.pin||unlocked;
+
+function save(){
+  S.rev=(S.rev||0)+1; myRev=S.rev;
+  if(S.log.length>300) S.log=S.log.slice(0,300);
+  if(!ref){try{localStorage.setItem("kindness-jar",JSON.stringify(S))}catch(e){} return}
+  if(writing){pending=true;return}
+  writing=true;
+  ref.set(JSON.parse(JSON.stringify(S))).catch(e=>{
+    $("status").textContent=e&&e.code==="invalid_argument"?"You can view this jar, but only the parent's account can change it.":"Couldn't save just now. Your last change may not be stored.";
+  }).finally(()=>{writing=false;if(pending){pending=false;save()}});
+}
+
+function commit(entry,msg){
+  const k=S.kids.find(x=>x.id===entry.kid);
+  k.points+=entry.dp; k.strikes+=entry.ds;
+  entry.t=Date.now(); entry.id=uid("l");
+  S.log.unshift(entry); lastUndo=entry.id; save(); render(true);
+  showToast(msg);
+}
+function goodDeed(d){const k=kid();commit({kid:k.id,type:"good",label:d.label,icon:d.icon,dp:d.pts,ds:0},`+${d.pts} for ${k.name}`)}
+function oops(o){
+  const k=kid(),R=S.rules; let ds=1,dp=0,msg=`Strike ${k.strikes+1} of ${R.strikes} for ${k.name}`;
+  if(k.strikes+1>=R.strikes){dp=-Math.min(R.penalty,k.points);ds=-k.strikes;msg=`${R.strikes} strikes: −${R.penalty} points for ${k.name}`}
+  commit({kid:k.id,type:"oops",label:o.label,icon:o.icon,dp,ds},msg);
+}
+function repair(){const k=kid();if(k.strikes<1)return;commit({kid:k.id,type:"repair",label:"Made it right",icon:"💛",dp:0,ds:-1},`One strike cleared for ${k.name}`)}
+function redeem(r){const k=kid();if(k.points<r.cost)return;if(k.goal===r.id)k.goal=null;commit({kid:k.id,type:"reward",label:r.label,icon:"🎁",dp:-r.cost,ds:0},`${k.name} earned: ${r.label}`)}
+function undo(){
+  const i=S.log.findIndex(l=>l.id===lastUndo); if(i<0)return;
+  const e=S.log[i],k=S.kids.find(x=>x.id===e.kid);
+  if(k){k.points-=e.dp;k.strikes-=e.ds}
+  S.log.splice(i,1); lastUndo=null; save(); render(); hideToast();
+}
+function showToast(m){$("toastMsg").textContent=m;$("toast").hidden=false;clearTimeout(toastT);toastT=setTimeout(hideToast,5000)}
+function hideToast(){$("toast").hidden=true}
+
+function nextGoal(k){
+  const on=S.rewards.filter(r=>r.on).sort((a,b)=>a.cost-b.cost);
+  if(k.goal){const g=S.rewards.find(r=>r.id===k.goal);if(g)return g}
+  return on.find(r=>r.cost>k.points)||on[on.length-1]||null;
+}
+function fmtTime(t){const d=new Date(t),n=new Date();const same=d.toDateString()===n.toDateString();
+  return same?d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):d.toLocaleDateString([], {month:"short",day:"numeric"})}
+
+function renderTop(){
+  $("lockBtn").className="lock"+(S.rules.pin&&unlocked?" on":"");
+  $("lockBtn").hidden=!S.rules.pin;
+  $("lockBtn").textContent=unlocked?"Parent mode on · Lock":"Parent mode";
+  $("kids").innerHTML=S.kids.map(k=>`<button class="kid" type="button" data-k="${k.id}" style="--kc:${esc(k.color)}" aria-pressed="${k.id===kid().id}">${esc(k.name)}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.v===view));
+}
+
+function render(burst){
+  if(!S)return; if(!kidId||!S.kids.some(k=>k.id===kidId))kidId=S.kids[0]?.id;
+  renderTop();
+  const m=$("main");
+  if(!S.kids.length&&view!=="setup"){m.innerHTML=`<div class="card"><h2>Add your first child</h2><p class="hint">Go to Setup to add each child's name. Their jar starts at zero.</p><button class="btn" type="button" data-go="setup">Open Setup</button></div>`;return}
+  if(view==="today")m.innerHTML=today(burst);
+  else if(view==="rewards")m.innerHTML=rewards();
+  else if(view==="history")m.innerHTML=history();
+  else m.innerHTML=setup();
+}
+
+function jarCard(burst){
+  const k=kid(),g=nextGoal(k),R=S.rules;
+  const pct=g?Math.min(100,Math.round(k.points/g.cost*100)):0;
+  const dots=Array.from({length:R.strikes},(_,i)=>`<span class="dot${i<k.strikes?" f":""}"></span>`).join("");
+  const goalTxt=!g?"Turn on a reward in Setup to set a goal.":k.points>=g.cost?`Ready to trade for <b>${esc(g.label)}</b>!`:`<b>${g.cost-k.points}</b> more to <b>${esc(g.label)}</b>`;
+  return `<section class="card"><div class="jar"><div class="jarvis" aria-hidden="true"><div class="fill" style="height:${pct}%"></div></div>
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><div class="pts${burst?" burst":""}">${k.points} <small>points</small></div>
+  <div class="goal">${goalTxt}</div>${g?`<div class="bar"><i style="width:${pct}%"></i></div>`:""}
+  <div class="strikes">Strikes ${dots}<span>${R.strikes} strikes = −${R.penalty} points</span></div></div></div></section>`;
+}
+function today(burst){
+  const dis=canAct()?"":" disabled", k=kid();
+  return `${jarCard(burst)}
+  <section class="card"><h2>Good deeds</h2><p class="hint">Tap when you catch ${esc(k.name)} being kind.</p>
+  <div class="grid">${S.deeds.map(d=>`<button class="deed g" type="button" data-deed="${d.id}"${dis}><span class="ic">${esc(d.icon)}</span>${esc(d.label)}<span class="p">+${d.pts}</span></button>`).join("")}</div></section>
+  <section class="card"><h2>Oops</h2><p class="hint">Each one adds a strike. Points only come off when strikes reach ${S.rules.strikes}.</p>
+  <div class="grid">${S.oops.map(o=>`<button class="deed b" type="button" data-oops="${o.id}"${dis}><span class="ic">${esc(o.icon)}</span>${esc(o.label)}<span class="p">strike</span></button>`).join("")}</div>
+  ${S.rules.repair?`<div class="row"><button class="btn good" type="button" id="repairBtn"${k.strikes<1||!canAct()?" disabled":""}>💛 Made it right</button><span class="hint">Said sorry and fixed it? Clear one strike.</span></div>`:""}</section>
+  ${canAct()?"":`<p class="hint" style="text-align:center">Unlock parent mode to add deeds.</p>`}`;
+}
+function rewards(){
+  const k=kid(),on=S.rewards.filter(r=>r.on).sort((a,b)=>a.cost-b.cost);
+  return `${jarCard()}<section class="card"><h2>Reward shop</h2><p class="hint">Trading spends the points. Pick a goal to aim the jar at it.</p><div>
+  ${on.length?on.map(r=>`<div class="rw"><div class="nm">${esc(r.label)} <span class="cost">${r.cost}</span></div>
+  <div class="row"><button class="btn ghost" type="button" data-goal="${r.id}">${k.goal===r.id?"Goal ✓":"Set goal"}</button>
+  <button class="btn" type="button" data-redeem="${r.id}"${k.points<r.cost||!canAct()?" disabled":""}>Trade</button></div></div>`).join(""):`<p class="hint">No rewards are turned on. Choose some in Setup.</p>`}
+  </div></section>`;
+}
+function history(){
+  const k=kid(),items=S.log.filter(l=>l.kid===k.id).slice(0,100);
+  const wk=Date.now()-7*864e5, w=S.log.filter(l=>l.kid===k.id&&l.t>wk);
+  const g=w.filter(l=>l.type==="good").length,o=w.filter(l=>l.type==="oops").length;
+  return `<section class="card"><h2>${esc(k.name)}'s last 7 days</h2><p class="hint"><b style="color:var(--good)">${g}</b> good deeds · <b style="color:var(--oops)">${o}</b> oops</p>
+  <div class="log">${items.length?items.map(l=>`<div class="le"><span>${esc(l.icon||"")}</span><div style="min-width:0"><div>${esc(l.label)}</div><div class="t">${fmtTime(l.t)}${l.type==="oops"&&l.dp===0?" · strike":""}${l.type==="repair"?" · strike cleared":""}</div></div>
+  <span class="d ${l.dp>0?"up":l.dp<0?"dn":"z"}">${l.dp>0?"+":""}${l.dp||"·"}</span></div>`).join(""):`<p class="hint">Nothing yet. Good deeds and rewards will show up here.</p>`}</div></section>`;
+}
+function setup(){
+  if(S.rules.pin&&!unlocked)return `<section class="card"><h2>Setup is locked</h2><p class="hint">Enter the parent PIN to change kids, deeds, rewards or rules.</p><button class="btn" type="button" id="askPin">Enter PIN</button></section>`;
+  const R=S.rules;
+  return `<section class="card"><h2>Kids</h2><div class="list">${S.kids.map(k=>`<div class="ed n"><input type="text" id="kn-${k.id}" data-kname="${k.id}" value="${esc(k.name)}" aria-label="Child name"><button class="x" type="button" data-delkid="${k.id}" aria-label="Remove ${esc(k.name)}">✕</button></div>`).join("")}</div>
+  <div class="row"><button class="btn" type="button" id="addKid">Add child</button></div></section>
+
+  <section class="card"><h2>Rules</h2><div class="f">
+  <label>Strikes before points come off<input id="rStrikes" type="number" min="1" max="10" value="${R.strikes}"></label>
+  <label>Points taken away<input id="rPenalty" type="number" min="0" max="100" value="${R.penalty}"></label></div>
+  <label class="row" style="font-weight:700"><input type="checkbox" id="rRepair"${R.repair?" checked":""}> Allow "Made it right" to clear a strike</label>
+  <div class="f"><label>Parent PIN (blank = no lock)<input id="rPin" type="password" inputmode="numeric" maxlength="6" value="${esc(R.pin)}"></label></div></section>
+
+  <section class="card"><h2>Good deeds</h2><p class="hint">Picture, name, points.</p><div class="list">${S.deeds.map(d=>`<div class="ed"><input class="e" type="text" id="di-${d.id}" data-dicon="${d.id}" value="${esc(d.icon)}" aria-label="Picture"><input type="text" id="dl-${d.id}" data-dlabel="${d.id}" value="${esc(d.label)}" aria-label="Deed"><input type="number" id="dp-${d.id}" data-dpts="${d.id}" min="1" value="${d.pts}" aria-label="Points"><button class="x" type="button" data-deldeed="${d.id}" aria-label="Remove">✕</button></div>`).join("")}</div>
+  <div class="row"><button class="btn" type="button" id="addDeed">Add good deed</button></div></section>
+
+  <section class="card"><h2>Oops list</h2><div class="list">${S.oops.map(o=>`<div class="ed" style="grid-template-columns:2.2rem 1fr auto"><input class="e" type="text" id="oi-${o.id}" data-oicon="${o.id}" value="${esc(o.icon)}" aria-label="Picture"><input type="text" id="ol-${o.id}" data-olabel="${o.id}" value="${esc(o.label)}" aria-label="Behavior"><button class="x" type="button" data-deloops="${o.id}" aria-label="Remove">✕</button></div>`).join("")}</div>
+  <div class="row"><button class="btn" type="button" id="addOops">Add oops</button></div></section>
+
+  <section class="card"><h2>Rewards</h2><p class="hint">Tick the ones your family will use. Costs are in points.</p><div class="list">${S.rewards.map(r=>`<div class="ed r"><input type="checkbox" id="ro-${r.id}" data-ron="${r.id}"${r.on?" checked":""} aria-label="Use this reward"><input type="text" id="rl-${r.id}" data-rlabel="${r.id}" value="${esc(r.label)}" aria-label="Reward"><input type="number" id="rc-${r.id}" data-rcost="${r.id}" min="1" value="${r.cost}" aria-label="Cost"><button class="x" type="button" data-delrew="${r.id}" aria-label="Remove">✕</button></div>`).join("")}</div>
+  <div class="row"><button class="btn" type="button" id="addRew">Add reward</button></div></section>
+
+  <section class="card"><h2>Backup</h2><p class="hint">Points are saved in this phone's browser. Save a backup file to move the jar to another device or keep it safe.</p>
+  <div class="row"><button class="btn ghost" type="button" id="exportBtn">Save backup</button><label class="btn ghost" for="importIn" style="cursor:pointer">Load backup</label><input id="importIn" type="file" accept="application/json,.json" hidden></div><p class="hint" id="backupMsg"></p></section>
+
+  <section class="card"><h2>Start fresh</h2><p class="hint">Sets every child back to 0 points and 0 strikes, and clears history. Lists stay.</p>
+  <div class="row"><button class="btn ghost" type="button" id="resetBtn">Reset points</button><span id="resetConfirm" hidden><button class="btn" style="background:var(--oops)" type="button" id="resetYes">Yes, reset</button></span></div></section>`;
+}
+
+/* events */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  if(b.classList.contains("tab")){view=b.dataset.v;render();return}
+  if(b.dataset.go){view=b.dataset.go;render();return}
+  if(b.dataset.k){kidId=b.dataset.k;render();return}
+  if(b.id==="undoBtn")return undo();
+  if(b.id==="lockBtn"||b.id==="askPin"){if(unlocked){unlocked=false;render()}else{$("pinBox").hidden=false;$("pinMsg").textContent="";$("pinIn").value="";$("pinIn").focus()}return}
+  if(b.id==="pinCancel"){$("pinBox").hidden=true;return}
+  if(b.id==="pinGo"){if($("pinIn").value===S.rules.pin){unlocked=true;$("pinBox").hidden=true;render()}else $("pinMsg").textContent="That PIN doesn't match. Try again.";return}
+  if(!canAct())return;
+  if(b.dataset.deed){const d=S.deeds.find(x=>x.id===b.dataset.deed);d&&goodDeed(d);return}
+  if(b.dataset.oops){const o=S.oops.find(x=>x.id===b.dataset.oops);o&&oops(o);return}
+  if(b.id==="repairBtn")return repair();
+  if(b.dataset.redeem){const r=S.rewards.find(x=>x.id===b.dataset.redeem);r&&redeem(r);return}
+  if(b.dataset.goal){const k=kid();k.goal=k.goal===b.dataset.goal?null:b.dataset.goal;save();render();return}
+  if(b.id==="addKid"){S.kids.push({id:uid("k"),name:"New child",color:COLORS[S.kids.length%COLORS.length],points:0,strikes:0,goal:null});save();render();return}
+  if(b.id==="addDeed"){S.deeds.push({id:uid("d"),icon:"✨",label:"New good deed",pts:2});save();render();return}
+  if(b.id==="addOops"){S.oops.push({id:uid("o"),icon:"⚠️",label:"New oops"});save();render();return}
+  if(b.id==="addRew"){S.rewards.push({id:uid("r"),label:"New reward",cost:30,on:true});save();render();return}
+  const del=(arr,key)=>{S[arr]=S[arr].filter(x=>x.id!==b.dataset[key]);save();render()};
+  if(b.dataset.delkid)return del("kids","delkid");
+  if(b.dataset.deldeed)return del("deeds","deldeed");
+  if(b.dataset.deloops)return del("oops","deloops");
+  if(b.dataset.delrew)return del("rewards","delrew");
+  if(b.id==="exportBtn"){const blob=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="kindness-jar-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);return}
+  if(b.id==="resetBtn"){$("resetConfirm").hidden=false;return}
+  if(b.id==="resetYes"){S.kids.forEach(k=>{k.points=0;k.strikes=0;k.goal=null});S.log=[];save();view="today";render();return}
+});
+document.addEventListener("change",e=>{
+  const t=e.target,d=t.dataset,v=t.value.trim(),find=(a,id)=>S[a].find(x=>x.id===id);
+  let hit=true;
+  if(d.kname)find("kids",d.kname).name=v||"Child";
+  else if(d.dicon)find("deeds",d.dicon).icon=v;
+  else if(d.dlabel)find("deeds",d.dlabel).label=v||"Good deed";
+  else if(d.dpts)find("deeds",d.dpts).pts=Math.max(1,parseInt(v)||1);
+  else if(d.oicon)find("oops",d.oicon).icon=v;
+  else if(d.olabel)find("oops",d.olabel).label=v||"Oops";
+  else if(d.ron)find("rewards",d.ron).on=t.checked;
+  else if(d.rlabel)find("rewards",d.rlabel).label=v||"Reward";
+  else if(d.rcost)find("rewards",d.rcost).cost=Math.max(1,parseInt(v)||1);
+  else if(t.id==="rStrikes")S.rules.strikes=Math.min(10,Math.max(1,parseInt(v)||3));
+  else if(t.id==="rPenalty")S.rules.penalty=Math.max(0,parseInt(v)||0);
+  else if(t.id==="rRepair")S.rules.repair=t.checked;
+  else if(t.id==="rPin"){S.rules.pin=v.replace(/\D/g,"");unlocked=true}
+  else hit=false;
+  if(hit){save();renderTop()}
+});
+document.addEventListener("change",e=>{if(e.target.id!=="importIn")return;const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x.kids))throw 0;S=normalize(x);save();view="today";render()}catch(err){$("backupMsg").textContent="That file isn't a Kindness Jar backup."}};r.readAsText(f)});
+$("pinIn").addEventListener("keydown",e=>{if(e.key==="Enter")$("pinGo").click()});
+
+/* boot */
+function normalize(x){const s=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),x);s.rules=Object.assign({},DEFAULTS.rules,x.rules||{});return s}
+function local(){try{const r=localStorage.getItem("kindness-jar");S=r?normalize(JSON.parse(r)):JSON.parse(JSON.stringify(DEFAULTS))}catch(e){S=JSON.parse(JSON.stringify(DEFAULTS))}
+  $("status").textContent="Saved on this device."; render()}
+local();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+
+</body>
+</html>
